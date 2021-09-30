@@ -1,73 +1,61 @@
+// 20210930165416
+// https://gist.githubusercontent.com/shibayan/58e0b6ed541c3ad46faff12360f7dedc/raw/e6f2b661c614ed36d5aaf3bf1579f5c5d8591902/azuredeploy_linux.json
+
 {
-    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "1.0.0.0",
-    "parameters": {   
-      "appName": {
-        "defaultValue": "node-red",
-        "type": "string"
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "siteName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the function app that you wish to create."
       }
-    },
-    "variables": {
-      "servicePlanName": "[concat('serviceplan',uniqueString(resourceGroup().id))]"
-    },
-    "resources": [
-      {
-        "type": "Microsoft.Web/serverfarms",
+    }
+  },
+  "variables": {
+    "servicePlanName": "[concat(parameters('siteName'), '-ServicePlan')]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2016-09-01",
+      "type": "Microsoft.Web/serverfarms",
+      "kind": "linux",
+      "name": "[variables('servicePlanName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
         "name": "[variables('servicePlanName')]",
-        "apiVersion": "2020-12-01",
-        "location": "[resourceGroup().location]",
-        "sku": {
-          "name": "B1",
-          "capacity": 1
-        },
-        "kind": "linux",
-        "properties": {
-          "workerSizeId": 0,
-          "reserved": true,
-          "hostingEnvironment": ""
-        }
+        "reserved": true,
+        "numberOfWorkers": "1"
       },
-      {
-        "type": "Microsoft.Web/sites",
-        "name": "[parameters('appName')]",
-        "apiVersion": "2020-12-01",
-        "location": "[resourceGroup().location]",
-        "properties": {
-          "name": "[parameters('appName')]",
-          "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('servicePlanName'))]"
-        },
-        "dependsOn": [
-          "[resourceId('Microsoft.Web/serverfarms', variables('servicePlanName'))]"
-        ],
-        "resources": [
-          {
-            "name": "appsettings",
-            "type": "config",
-            "apiVersion": "2020-12-01",
-            "dependsOn": [
-              "[resourceId('Microsoft.Web/sites', parameters('appName'))]"
-            ],
-            "tags": {
-              "displayName": "appSettings"
-            },
-            "properties": {
-              "DOCKER_CUSTOM_IMAGE_NAME": "ionutcarp/node-red-docker-az-web-app",
-              "WEBSITES_ENABLE_APP_SERVICE_STORAGE": "true",
-              "WEBSITE_PORT": "1880"
-            }
-          }
-        ]
-      },
-      {
-          "type": "Microsoft.Web/sites/config",
-          "apiVersion": "2020-12-01",
-          "dependsOn":[
-              "[resourceId('Microsoft.Web/sites', parameters('appName'))]"
-          ],
-          "name": "[concat(parameters('appName'),'/web')]",
-          "properties": {
-              "webSocketsEnabled": true
-          }
+      "dependsOn": [
+        
+      ],
+      "sku": {
+        "Tier": "Standard",
+        "Name": "S1"
       }
-    ]
-  }
+    },
+    {
+      "apiVersion": "2016-08-01",
+      "type": "Microsoft.Web/sites",
+      "name": "[parameters('siteName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "siteConfig": {
+          "name": "[parameters('siteName')]",
+          "appSettings": [
+            {
+              "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+              "value": "false"
+            }
+          ],
+          "linuxFxVersion": "DOCKER|nginx:alpine"
+        },
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('servicePlanName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('servicePlanName'))]"
+      ]
+    }
+  ]
+}
