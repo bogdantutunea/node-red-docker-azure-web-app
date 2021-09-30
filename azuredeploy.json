@@ -1,61 +1,46 @@
-// 20210930165416
-// https://gist.githubusercontent.com/shibayan/58e0b6ed541c3ad46faff12360f7dedc/raw/e6f2b661c614ed36d5aaf3bf1579f5c5d8591902/azuredeploy_linux.json
-
 {
-  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-  "contentVersion": "1.0.0.0",
-  "parameters": {
-    "siteName": {
-      "type": "string",
-      "metadata": {
-        "description": "The name of the function app that you wish to create."
-      }
-    }
-  },
-  "variables": {
-    "servicePlanName": "[concat(parameters('siteName'), '-ServicePlan')]"
-  },
-  "resources": [
-    {
-      "apiVersion": "2016-09-01",
-      "type": "Microsoft.Web/serverfarms",
-      "kind": "linux",
-      "name": "[variables('servicePlanName')]",
-      "location": "[resourceGroup().location]",
-      "properties": {
-        "name": "[variables('servicePlanName')]",
-        "reserved": true,
-        "numberOfWorkers": "1"
-      },
-      "dependsOn": [
-        
-      ],
-      "sku": {
-        "Tier": "Standard",
-        "Name": "S1"
-      }
-    },
-    {
-      "apiVersion": "2016-08-01",
-      "type": "Microsoft.Web/sites",
-      "name": "[parameters('siteName')]",
-      "location": "[resourceGroup().location]",
-      "properties": {
-        "siteConfig": {
-          "name": "[parameters('siteName')]",
-          "appSettings": [
-            {
-              "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
-              "value": "false"
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "name": {
+            "type": "string",
+            "defaultValue": "webApp1",
+            "metadata": {
+                "description": "Web App name that will be prefixed to .azurewebsites.net"
             }
-          ],
-          "linuxFxVersion": "DOCKER|nginx:alpine"
+        }
+    },
+    "functions": [],
+    "variables": {},
+    "resources": [{
+        "name": "[parameters('name')]",
+        "type": "Microsoft.Web/sites",
+        "apiVersion": "2018-11-01",
+        "location": "[resourceGroup().location]",
+        "tags": {
+            "[concat('hidden-related:', resourceGroup().id, '/providers/Microsoft.Web/serverfarms/appServicePlan1')]": "Resource",
+            "displayName": "[parameters('name')]"
         },
-        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('servicePlanName'))]"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Web/serverfarms', variables('servicePlanName'))]"
-      ]
-    }
-  ]
+        "dependsOn": [
+            "[resourceId('Microsoft.Web/serverfarms', 'appServicePlan1')]"
+        ],
+        "properties": {
+            "name": "[parameters('name')]",
+            "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', 'appServicePlan1')]",
+            "siteConfig": {
+              "appSettings": [
+                {
+                  "name": "DOCKER_REGISTRY_SERVER_URL",
+                  "value": "https://index.docker.io"
+                 },
+                 {
+                   "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+                   "value": "true"
+                  }
+              ],
+              "linuxFxVersion": "DOCKER|ionutcarp/node-red-docker-az-web-app:latest"
+            }
+        }
+    }],
+    "outputs": {}
 }
