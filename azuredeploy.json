@@ -7,7 +7,7 @@
     },
     "name": {
       "type": "string",
-      "defaultValue": "webApp1",
+      "defaultValue": "[concat('NodeRed01-', uniqueString(resourceGroup().id))]",
       "metadata": {
         "description": "Web App name that will be prefixed to .azurewebsites.net"
       }
